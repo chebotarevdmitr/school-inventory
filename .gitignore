@@ -1,0 +1,46 @@
+# .gitignore
+
+# Исключение директорий сборки
+build/
+cmake-build-*/
+out/
+bin/
+*.user
+
+# Файлы баз данных и журналы
+/data/*.db
+/data/*.db-*
+*.db
+*.db-journal
+
+# Артефакты компиляции
+*.o
+*.a
+*.so
+*.dylib
+*.exe
+*.out
+*.dll
+
+# Резервные копии и временные файлы
+*~
+*.bak
+*.tmp
+*.swp
+*.swo
+
+# Файлы IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# Системные файлы
+.DS_Store
+Thumbs.db
+
+# Логи приложения
+*.log
+
+# Python-специфичные (на всякий случай)
+__pycache__/
+*.pyc
