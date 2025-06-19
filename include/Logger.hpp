@@ -6,8 +6,9 @@
 #include <iostream>  // Для вывода ошибок в консоль
 #include <iomanip>   // Для форматирования вывода
 #include <ctime>     // Для работы со временем
+#include <mutex>     // Для многопоточной безопасности
 
-// Класс Logger предназначен для записи логов в файл
+// Класс Logger предназначен для записи логов в файл и/или консоль
 class Logger {
 public:
     // Уровни логирования: INFO (информация), WARNING (предупреждение), ERROR (ошибка)
@@ -19,7 +20,8 @@ public:
     
     // Конструктор: создает или открывает файл лога
     // filename - путь к файлу лога (по умолчанию "inventory.log")
-    explicit Logger(const std::string& filename = "inventory.log");
+    // minLevel - минимальный уровень логирования (по умолчанию INFO)
+    explicit Logger(const std::string& filename = "inventory.log", Level minLevel = INFO);
     
     // Деструктор: гарантирует закрытие файла при уничтожении объекта
     ~Logger();
@@ -28,12 +30,14 @@ public:
     // level - уровень важности сообщения
     // message - текст сообщения
     void log(Level level, const std::string& message);
-    
+
 private:
     std::ofstream logfile; // Поток для записи в файл
-    
+    Level minLogLevel;     // Минимальный уровень логирования
+    std::mutex logMutex;   // Мьютекс для многопоточной безопасности
+
     // Вспомогательная функция для преобразования уровня в строку
-    std::string levelToString(Level level);
+    std::string levelToString(Level level) const;
 };
 
 #endif // LOGGER_HPP

@@ -1,129 +1,115 @@
-#include "../include/Database.hpp"     // Подключаем собственный заголовочный файл
-#include <fstream>          // Для работы с файлами
-#include <stdexcept>        // Для исключений
-#include <cstring>          // Для работы со строками C-style
+#include "../include/database.hpp" // Подключаем собственный заголовочный файл
+#include <fstream>                 // Для работы с файлами
+#include <stdexcept>               // Для исключений
+#include <cstring>                 // Для работы со строками C-style
 
-// Конструктор класса Database
-// db_path - путь к файлу базы данных
-// logger - ссылка на объект логгера для записи событий
-Database::Database(const std::string& db_path, Logger& logger) 
-    : db_path(db_path), logger(logger) {
-    
-    // Записываем в лог попытку открытия БД
+/**
+ * @brief Конструктор класса Database.
+ * 
+ * Открывает соединение с базой данных и инициализирует логгер.
+ * 
+ * @param db_path Путь к файлу базы данных.
+ * @param logger Ссылка на объект логгера.
+ */
+Database::Database(const std::string& db_path, Logger& logger)
+    : db(nullptr), db_path(db_path), logger(logger) {
     logger.log(Logger::INFO, "Попытка открыть базу данных: " + db_path);
-    
-    // Пытаемся открыть базу данных SQLite
+
     if (sqlite3_open(db_path.c_str(), &db) != SQLITE_OK) {
-        // Если не удалось, формируем сообщение об ошибке
         std::string err = "Не удалось открыть БД: " + std::string(sqlite3_errmsg(db));
-        
-        // Записываем ошибку в лог
         logger.log(Logger::ERROR, err);
-        
-        // Генерируем исключение
         throw std::runtime_error(err);
     }
-    
-    // Успешное открытие БД
+
     logger.log(Logger::INFO, "База данных успешно открыта");
 }
 
-// Деструктор класса Database
+/**
+ * @brief Деструктор класса Database.
+ * 
+ * Закрывает соединение с базой данных.
+ */
 Database::~Database() {
-    // Закрываем соединение с БД
-    sqlite3_close(db);
-    
-    // Записываем в лог информацию о закрытии соединения
-    logger.log(Logger::INFO, "Соединение с БД закрыто");
+    if (db) {
+        sqlite3_close(db);
+        logger.log(Logger::INFO, "Соединение с БД закрыто");
+    }
 }
 
-// Метод для выполнения SQL-запроса
-// sql - строка с SQL-запросом
-// Возвращает true при успешном выполнении, false при ошибке
+/**
+ * @brief Выполняет SQL-запрос.
+ * 
+ * @param sql SQL-запрос для выполнения.
+ * @return true, если запрос выполнен успешно, иначе false.
+ */
 bool Database::execute(const std::string& sql) {
-    // Логируем выполняемый запрос
     logger.log(Logger::INFO, "Выполнение SQL: " + sql);
-    
-    // Указатель для сообщения об ошибке от SQLite
+
     char* errMsg = nullptr;
-    
-    // Выполняем SQL-запрос
     int result = sqlite3_exec(db, sql.c_str(), nullptr, nullptr, &errMsg);
-    
-    // Проверяем результат выполнения
+
     if (result != SQLITE_OK) {
-        // Формируем сообщение об ошибке
         std::string err = "Ошибка SQL: " + std::string(errMsg);
-        
-        // Логируем ошибку
         logger.log(Logger::ERROR, err);
-        
-        // Освобождаем память, выделенную SQLite под сообщение об ошибке
         sqlite3_free(errMsg);
-        
         return false;
     }
-    
-    // Успешное выполнение запроса
+
     logger.log(Logger::INFO, "SQL выполнен успешно");
     return true;
 }
 
-// Метод для инициализации структуры базы данных
-// Создает необходимые таблицы, если они не существуют
+/**
+ * @brief Инициализирует структуру базы данных.
+ * 
+ * Создает таблицы Equipment и Classrooms, если они не существуют.
+ * 
+ * @return true, если инициализация прошла успешно, иначе false.
+ */
 bool Database::initialize() {
-    // Логируем начало инициализации
     logger.log(Logger::INFO, "Инициализация структуры БД");
-    
-    // 1. Проверка и создание таблицы Equipment
+
     if (!tableExists("Equipment")) {
         logger.log(Logger::WARNING, "Таблица Equipment не найдена, создаем...");
-        
-        // SQL для создания таблицы оборудования
+
         std::string sql = R"(
             CREATE TABLE Equipment (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,              -- Наименование оборудования
-                quantity INTEGER NOT NULL,       -- Количество
-                inventory_number TEXT UNIQUE,    -- Инвентарный номер (уникальный)
-                room TEXT NOT NULL,              -- Кабинет/помещение
-                responsible TEXT NOT NULL        -- МОЛ (Материально ответственное лицо)
+                name TEXT NOT NULL,
+                quantity INTEGER NOT NULL,
+                inventory_number TEXT UNIQUE,
+                room TEXT NOT NULL,
+                responsible TEXT NOT NULL
             );
         )";
-        
-        // Пытаемся создать таблицу
+
         if (!execute(sql)) {
             logger.log(Logger::ERROR, "Ошибка создания таблицы Equipment");
             return false;
         }
     }
-    
-    // 2. Проверка и создание таблицы Classrooms (кабинеты)
+
     if (!tableExists("Classrooms")) {
         logger.log(Logger::WARNING, "Таблица Classrooms не найдена, создаем...");
-        
-        // SQL для создания таблицы кабинетов
+
         std::string sql = R"(
             CREATE TABLE Classrooms (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                room_number TEXT NOT NULL UNIQUE, -- Номер кабинета (уникальный)
-                building TEXT NOT NULL,           -- Корпус (А, Б1, Б2)
-                floor INTEGER NOT NULL,           -- Этаж
-                purpose TEXT,                    -- Назначение (история, математика и т.д.)
-                responsible TEXT                 -- Ответственный за кабинет
+                room_number TEXT NOT NULL UNIQUE,
+                building TEXT NOT NULL,
+                floor INTEGER NOT NULL,
+                purpose TEXT,
+                responsible TEXT
             );
         )";
-        
-        // Пытаемся создать таблицу
+
         if (!execute(sql)) {
             logger.log(Logger::ERROR, "Ошибка создания таблицы Classrooms");
             return false;
         }
-        
-        // Дополнительно: заполнение таблицы начальными данными
+
         logger.log(Logger::INFO, "Заполнение таблицы Classrooms начальными данными");
-        
-        // SQL для вставки данных о кабинетах
+
         std::string insertSql = R"(
             INSERT INTO Classrooms (room_number, building, floor, purpose) VALUES 
             ('1', 'A', 1, 'История'),
@@ -152,146 +138,124 @@ bool Database::initialize() {
             ('26', 'A', 3, 'Информатика'),
             ('27', 'A', 3, 'Бухгалтерия');
         )";
-        
+
         if (!execute(insertSql)) {
             logger.log(Logger::ERROR, "Ошибка заполнения таблицы Classrooms");
             return false;
         }
     }
-    
-    // Успешное завершение инициализации
+
     logger.log(Logger::INFO, "Структура БД успешно инициализирована");
     return true;
 }
 
-// Метод для проверки существования таблицы в БД
-// tableName - имя таблицы для проверки
+/**
+ * @brief Проверяет существование таблицы.
+ * 
+ * @param tableName Имя таблицы.
+ * @return true, если таблица существует, иначе false.
+ */
 bool Database::tableExists(const std::string& tableName) {
-    // Формируем SQL-запрос для проверки существования таблицы
-    std::string sql = "SELECT count(*) FROM sqlite_master "
-                      "WHERE type='table' AND name='" + tableName + "';";
-    
-    // Подготавливаем SQL-запрос
+    std::string sql = "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='" + tableName + "';";
     sqlite3_stmt* stmt;
+
     if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
-        // Ошибка при подготовке запроса
         std::string err = "Ошибка подготовки запроса: " + std::string(sqlite3_errmsg(db));
         logger.log(Logger::ERROR, err);
         return false;
     }
-    
-    // Выполняем запрос
+
     bool exists = false;
     if (sqlite3_step(stmt) == SQLITE_ROW) {
-        // Если есть хотя бы одна строка в результате
         exists = (sqlite3_column_int(stmt, 0) == 1);
     }
-    
-    // Финализируем запрос
+
     sqlite3_finalize(stmt);
-    
-    // Логируем результат проверки
+
     if (exists) {
         logger.log(Logger::INFO, "Таблица существует: " + tableName);
     } else {
         logger.log(Logger::INFO, "Таблица не найдена: " + tableName);
     }
-    
+
     return exists;
 }
 
-// Метод для выполнения SQL-скрипта из файла
-// filepath - путь к файлу со скриптом
+/**
+ * @brief Выполняет SQL-скрипт из файла.
+ * 
+ * @param filepath Путь к файлу со скриптом.
+ * @return true, если скрипт выполнен успешно, иначе false.
+ */
 bool Database::executeScript(const std::string& filepath) {
-    // Логируем начало выполнения скрипта
     logger.log(Logger::INFO, "Выполнение SQL-скрипта: " + filepath);
-    
-    // Открываем файл со скриптом
+
     std::ifstream file(filepath);
     if (!file.is_open()) {
-        // Формируем сообщение об ошибке
         std::string err = "Не удалось открыть SQL-скрипт: " + filepath;
-        
-        // Логируем ошибку
         logger.log(Logger::ERROR, err);
         return false;
     }
-    
-    // Считываем содержимое файла в строку
-    std::string sql(
-        (std::istreambuf_iterator<char>(file)),
-        std::istreambuf_iterator<char>()
-    );
-    
-    // Закрываем файл
+
+    std::string sql((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
     file.close();
-    
-    // Выполняем SQL-скрипт
+
     return execute(sql);
 }
 
-// Метод для добавления оборудования в базу данных
-bool Database::addEquipment(const std::string& name, int quantity, 
-                           const std::string& inventory_number,
-                           const std::string& room, 
-                           const std::string& responsible) {
-    // Формируем SQL-запрос для вставки данных
+/**
+ * @brief Добавляет новое оборудование в базу данных.
+ * 
+ * @param name Наименование оборудования.
+ * @param quantity Количество единиц оборудования.
+ * @param inventory_number Инвентарный номер.
+ * @param room Номер кабинета.
+ * @param responsible ФИО материально ответственного лица.
+ * @return true, если оборудование добавлено успешно, иначе false.
+ */
+bool Database::addEquipment(const std::string& name, int quantity,
+                            const std::string& inventory_number,
+                            const std::string& room,
+                            const std::string& responsible) {
     std::string sql = "INSERT INTO Equipment (name, quantity, inventory_number, room, responsible) "
                       "VALUES ('" + name + "', " + std::to_string(quantity) + ", '" + 
                       inventory_number + "', '" + room + "', '" + responsible + "');";
-    
-    // Выполняем запрос и возвращаем результат
+
     return execute(sql);
 }
 
-// Метод для поиска оборудования
+/**
+ * @brief Ищет оборудование по заданному условию.
+ * 
+ * @param query Условие поиска.
+ * @return Результаты поиска в виде вектора векторов строк.
+ */
 std::vector<std::vector<std::string>> Database::searchEquipment(const std::string& query) {
-    // Вектор для хранения результатов
     std::vector<std::vector<std::string>> results;
-    
-    // Формируем SQL-запрос для поиска
+
     std::string sql = "SELECT name, quantity, inventory_number, room, responsible "
                       "FROM Equipment WHERE name LIKE '%" + query + "%' OR room LIKE '%" + query + "%';";
-    
-    // Подготавливаем SQL-запрос
+
     sqlite3_stmt* stmt;
     if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
-        // Ошибка при подготовке запроса
         std::string err = "Ошибка подготовки запроса: " + std::string(sqlite3_errmsg(db));
         logger.log(Logger::ERROR, err);
         return results;
     }
-    
-    // Перебираем результаты запроса
+
     while (sqlite3_step(stmt) == SQLITE_ROW) {
-        // Вектор для хранения строки результата
         std::vector<std::string> row;
-        
-        // Количество колонок в результате
         int colCount = sqlite3_column_count(stmt);
-        
-        // Перебираем колонки
-        for (int i = 0; i < colCount; i++) {
-            // Получаем значение колонки как строку
+
+        for (int i = 0; i < colCount; ++i) {
             const char* colText = reinterpret_cast<const char*>(sqlite3_column_text(stmt, i));
-            
-            // Добавляем значение в строку результата
-            if (colText) {
-                row.push_back(colText);
-            } else {
-                row.push_back(""); // Пустая строка для NULL значений
-            }
+            row.push_back(colText ? colText : "");
         }
-        
-        // Добавляем строку в общий результат
+
         results.push_back(row);
     }
-    
-    // Финализируем запрос
+
     sqlite3_finalize(stmt);
-    
-    // Логируем количество найденных результатов
     logger.log(Logger::INFO, "Найдено записей оборудования: " + std::to_string(results.size()));
-    
     return results;
 }

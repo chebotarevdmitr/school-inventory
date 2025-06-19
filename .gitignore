@@ -1,10 +1,9 @@
-# .gitignore
-
 # Исключение директорий сборки
 build/
 cmake-build-*/
 out/
 bin/
+ninja-build/
 *.user
 
 # Файлы баз данных и журналы
@@ -12,6 +11,9 @@ bin/
 /data/*.db-*
 *.db
 *.db-journal
+*.sqlite
+*.sqlite3
+*.cache
 
 # Артефакты компиляции
 *.o
@@ -21,6 +23,9 @@ bin/
 *.exe
 *.out
 *.dll
+*.obj
+*.pdb
+*.idb
 
 # Резервные копии и временные файлы
 *~
@@ -28,19 +33,25 @@ bin/
 *.tmp
 *.swp
 *.swo
+\#*\#
+*.tmp.*
 
 # Файлы IDE
 .vscode/
 .idea/
 *.code-workspace
+cmake-build-debug/
+cmake-build-release/
 
 # Системные файлы
 .DS_Store
 Thumbs.db
+desktop.ini
+.AppleDouble
 
 # Логи приложения
 *.log
 
-# Python-специфичные (на всякий случай)
+# Python-специфичные (убрать, если не используется)
 __pycache__/
 *.pyc
