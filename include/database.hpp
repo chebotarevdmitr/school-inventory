@@ -84,6 +84,19 @@ public:
                       const std::string& responsible);
 
     /**
+     * @brief Обновляет данные об оборудовании в базе данных.
+     * 
+     * @param inventory_number Инвентарный номер оборудования.
+     * @param new_quantity Новое количество единиц оборудования.
+     * @param new_room Новый номер кабинета.
+     * @param new_responsible Новое ФИО материально ответственного лица.
+     * @return true, если данные обновлены успешно, иначе false.
+     */
+    bool updateEquipment(const std::string& inventory_number, int new_quantity,
+                         const std::string& new_room,
+                         const std::string& new_responsible);
+
+    /**
      * @brief Ищет оборудование по заданному условию.
      * 
      * @param query Условие поиска (например, "room = '101'").
