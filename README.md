@@ -127,3 +127,67 @@ https://img.shields.io/badge/C++-17-blue https://img.shields.io/badge/SQLite-3-g
 24|26|A|3|Информатика|
 25|27|A|3|Бухгалтерия|
 sqlite> .
+
+GooleTest
+┌──(dmitriy㉿kali)-[~/Documents/my_basic_course/dz/school_inventory]
+└─$ mkdir -p build
+cd build 
+
+┌──(dmitriy㉿kali)-[~/Documents/my_basic_course/dz/school_inventory/build]
+└─$ cmake .. 
+-- The C compiler identification is GNU 14.2.0
+-- The CXX compiler identification is GNU 14.2.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found SQLite3: /usr/include (found version "3.46.1")
+-- Project 'SchoolInventory' configured successfully.
+-- Found GTest: /usr/lib/x86_64-linux-gnu/cmake/GTest/GTestConfig.cmake (found version "1.15.0")
+-- Google Test configured successfully.
+-- Configuring done (0.7s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/dmitriy/Documents/my_basic_course/dz/school_inventory/build
+
+┌──(dmitriy㉿kali)-[~/Documents/my_basic_course/dz/school_inventory/build]
+└─$ make 
+[ 10%] Building CXX object CMakeFiles/SchoolInventory.dir/src/main.cpp.o
+[ 20%] Building CXX object CMakeFiles/SchoolInventory.dir/src/database.cpp.o
+[ 30%] Building CXX object CMakeFiles/SchoolInventory.dir/src/Logger.cpp.o
+[ 40%] Building CXX object CMakeFiles/SchoolInventory.dir/src/Equipment.cpp.o
+[ 50%] Linking CXX executable bin/SchoolInventory
+[ 50%] Built target SchoolInventory
+[ 60%] Building CXX object CMakeFiles/run_tests.dir/tests/database_test.cpp.o
+[ 70%] Building CXX object CMakeFiles/run_tests.dir/src/database.cpp.o
+[ 80%] Building CXX object CMakeFiles/run_tests.dir/src/Logger.cpp.o
+[ 90%] Building CXX object CMakeFiles/run_tests.dir/src/Equipment.cpp.o
+[100%] Linking CXX executable run_tests
+[100%] Built target run_tests
+
+┌──(dmitriy㉿kali)-[~/Documents/my_basic_course/dz/school_inventory/build]
+└─$ ./run_tests 
+Running main() from ./googletest/src/gtest_main.cc
+[==========] Running 2 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 2 tests from DatabaseTest
+[ RUN      ] DatabaseTest.Initialization
+[2025-06-22 22:50:14] [WARNING] Таблица Equipment не найдена, создаем...
+[2025-06-22 22:50:14] [WARNING] Таблица Classrooms не найдена, создаем...
+[       OK ] DatabaseTest.Initialization (1 ms)
+[ RUN      ] DatabaseTest.AddEquipment
+[2025-06-22 22:50:14] [WARNING] Таблица Equipment не найдена, создаем...
+[2025-06-22 22:50:14] [WARNING] Таблица Classrooms не найдена, создаем...
+[       OK ] DatabaseTest.AddEquipment (0 ms)
+[----------] 2 tests from DatabaseTest (2 ms total)
+
+[----------] Global test environment tear-down
+[==========] 2 tests from 1 test suite ran. (2 ms total)
+[  PASSED  ] 2 tests.
+
+┌──(dmitriy㉿kali)-[~/Documents/my_basic_course/dz/school_inventory/build]
