@@ -1,164 +1,126 @@
+#include <iostream>
 #include "../include/database.hpp"
 #include "../include/Logger.hpp"
-#include <iostream>
-#include <iomanip>
-#include <vector>
-
-// Функция для вывода результатов поиска
-void printSearchResults(const std::vector<std::vector<std::string>>& results) {
-    if (results.empty()) {
-        std::cout << "Ничего не найдено.\n";
-        return;
-    }
-
-    std::cout << std::setw(20) << "Наименование"
-              << std::setw(10) << "Количество"
-              << std::setw(20) << "Инвентарный номер"
-              << std::setw(15) << "Кабинет"
-              << std::setw(20) << "МОЛ" << "\n";
-    std::cout << std::string(85, '-') << "\n";
-
-    for (const auto& row : results) {
-        std::cout << std::setw(20) << row[0]  // Наименование
-                  << std::setw(10) << row[1]  // Количество
-                  << std::setw(20) << row[2]  // Инвентарный номер
-                  << std::setw(15) << row[3]  // Кабинет
-                  << std::setw(20) << row[4]  // МОЛ
-                  << "\n";
-    }
-}
 
 int main() {
+    Logger logger("school_inventory.log");
+    Database db("data/school.db", logger);
+
     try {
-        // Создаем объект логгера
-        Logger logger("school_inventory.log");
-        logger.log(Logger::INFO, "Программа запущена");
-
-        // Инициализация базы данных
-        Database db("data/school.db", logger);
-
-        // Проверяем инициализацию базы данных
         if (!db.initialize()) {
-            logger.log(Logger::ERROR, "Ошибка инициализации БД. Программа остановлена");
+            std::cerr << "Ошибка инициализации базы данных!" << std::endl;
             return 1;
         }
 
-        int choice;
         while (true) {
-            std::cout << "\n=== Учет материальной базы школы ===\n";
-            std::cout << "1. Добавить оборудование\n"
-                      << "2. Поиск оборудования\n"
-                      << "3. Просмотр всех кабинетов\n"
-                      << "4. Выход\n"
-                      << "Выберите действие: ";
+            std::cout << "=== Учет материальной базы школы ===\n";
+            std::cout << "1. Добавить оборудование\n";
+            std::cout << "2. Поиск оборудования\n";
+            std::cout << "3. Обновить данные об оборудовании\n";
+            std::cout << "4. Удалить оборудование\n";
+            std::cout << "5. Выход\n";
+            std::cout << "Выберите действие: ";
+
+            int choice;
             std::cin >> choice;
             std::cin.ignore(); // Очистка буфера
 
-            if (choice == 1) {
-                logger.log(Logger::INFO, "Пользователь выбрал: Добавить оборудование");
+            switch (choice) {
+                case 1: {
+                    std::string name, inventory_number, room, responsible;
+                    int quantity;
 
-                std::string name, inv_num, room, responsible;
-                int quantity;
+                    std::cout << "Введите название оборудования: ";
+                    std::getline(std::cin, name);
 
-                std::cout << "Наименование: ";
-                std::getline(std::cin, name);
-                if (name.empty()) {
-                    std::cerr << "Ошибка: Наименование не может быть пустым.\n";
-                    logger.log(Logger::WARNING, "Попытка добавить оборудование без наименования");
-                    continue;
+                    std::cout << "Введите количество: ";
+                    std::cin >> quantity;
+                    std::cin.ignore();
+
+                    std::cout << "Введите инвентарный номер: ";
+                    std::getline(std::cin, inventory_number);
+
+                    std::cout << "Введите номер кабинета: ";
+                    std::getline(std::cin, room);
+
+                    std::cout << "Введите ФИО материально ответственного лица: ";
+                    std::getline(std::cin, responsible);
+
+                    if (db.addEquipment(name, quantity, inventory_number, room, responsible)) {
+                        std::cout << "Оборудование успешно добавлено!\n";
+                    } else {
+                        std::cerr << "Ошибка при добавлении оборудования.\n";
+                    }
+                    break;
                 }
+                case 2: {
+                    std::string query;
+                    std::cout << "Введите запрос для поиска: ";
+                    std::getline(std::cin, query);
 
-                std::cout << "Количество: ";
-                while (!(std::cin >> quantity) || quantity <= 0) {
-                    std::cerr << "Ошибка: Введите корректное количество (целое положительное число).\n";
-                    std::cin.clear();
-                    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                    auto results = db.searchEquipment(query);
+                    if (results.empty()) {
+                        std::cout << "Оборудование не найдено.\n";
+                    } else {
+                        std::cout << "Результаты поиска:\n";
+                        for (const auto& row : results) {
+                            std::cout << "Наименование: " << row[0] << ", Количество: " << row[1]
+                                      << ", Инвентарный номер: " << row[2] << ", Кабинет: " << row[3]
+                                      << ", Ответственное лицо: " << row[4] << "\n";
+                        }
+                    }
+                    break;
                 }
-                std::cin.ignore();
+                case 3: {
+                    std::string inventory_number, new_room, new_responsible;
+                    int new_quantity;
 
-                std::cout << "Инвентарный номер: ";
-                std::getline(std::cin, inv_num);
-                if (inv_num.empty()) {
-                    std::cerr << "Ошибка: Инвентарный номер не может быть пустым.\n";
-                    logger.log(Logger::WARNING, "Попытка добавить оборудование без инвентарного номера");
-                    continue;
+                    std::cout << "Введите инвентарный номер оборудования: ";
+                    std::getline(std::cin, inventory_number);
+
+                    std::cout << "Введите новое количество: ";
+                    std::cin >> new_quantity;
+                    std::cin.ignore();
+
+                    std::cout << "Введите новый номер кабинета: ";
+                    std::getline(std::cin, new_room);
+
+                    std::cout << "Введите нового ответственного: ";
+                    std::getline(std::cin, new_responsible);
+
+                    if (db.updateEquipment(inventory_number, new_quantity, new_room, new_responsible)) {
+                        std::cout << "Данные успешно обновлены!\n";
+                    } else {
+                        std::cerr << "Ошибка при обновлении данных.\n";
+                    }
+                    break;
                 }
+                case 4: {
+                    std::string inventory_number;
+                    std::cout << "Введите инвентарный номер оборудования для удаления: ";
+                    std::getline(std::cin, inventory_number);
 
-                std::cout << "Кабинет/помещение: ";
-                std::getline(std::cin, room);
-                if (room.empty()) {
-                    std::cerr << "Ошибка: Кабинет не может быть пустым.\n";
-                    logger.log(Logger::WARNING, "Попытка добавить оборудование без указания кабинета");
-                    continue;
+                    if (db.removeEquipment(inventory_number)) {
+                        std::cout << "Оборудование успешно удалено!\n";
+                    } else {
+                        std::cerr << "Ошибка при удалении оборудования.\n";
+                    }
+                    break;
                 }
-
-                std::cout << "МОЛ (ФИО): ";
-                std::getline(std::cin, responsible);
-                if (responsible.empty()) {
-                    std::cerr << "Ошибка: ФИО МОЛ не может быть пустым.\n";
-                    logger.log(Logger::WARNING, "Попытка добавить оборудование без указания МОЛ");
-                    continue;
+                case 5: {
+                    std::cout << "Выход из программы...\n";
+                    return 0;
                 }
-
-                if (db.addEquipment(name, quantity, inv_num, room, responsible)) {
-                    std::cout << "Оборудование успешно добавлено!\n";
-                    logger.log(Logger::INFO, "Оборудование добавлено: " + name);
-                } else {
-                    std::cerr << "Ошибка при добавлении оборудования.\n";
-                    logger.log(Logger::ERROR, "Ошибка добавления оборудования: " + name);
+                default: {
+                    std::cout << "Неверный выбор. Попробуйте снова.\n";
+                    break;
                 }
-
-            } else if (choice == 2) {
-                logger.log(Logger::INFO, "Пользователь выбрал: Поиск оборудования");
-
-                std::string query;
-                std::cout << "Введите название или кабинет для поиска: ";
-                std::getline(std::cin, query);
-
-                if (query.empty()) {
-                    std::cerr << "Ошибка: Поисковый запрос не может быть пустым.\n";
-                    logger.log(Logger::WARNING, "Попытка выполнить пустой поисковый запрос");
-                    continue;
-                }
-
-                logger.log(Logger::INFO, "Поисковый запрос: " + query);
-                auto results = db.searchEquipment(query);
-                printSearchResults(results);
-                logger.log(Logger::INFO, "Найдено результатов: " + std::to_string(results.size()));
-
-            } else if (choice == 3) {
-                logger.log(Logger::INFO, "Пользователь выбрал: Просмотр всех кабинетов");
-
-                std::vector<std::string> rooms = db.getAllRooms();
-                if (rooms.empty()) {
-                    std::cout << "Кабинеты не найдены.\n";
-                    logger.log(Logger::WARNING, "Список кабинетов пуст");
-                    continue;
-                }
-
-                std::cout << "Список всех кабинетов:\n";
-                for (const auto& room : rooms) {
-                    std::cout << "- " << room << "\n";
-                }
-                logger.log(Logger::INFO, "Показано кабинетов: " + std::to_string(rooms.size()));
-
-            } else if (choice == 4) {
-                logger.log(Logger::INFO, "Пользователь выбрал выход");
-                break;
-
-            } else {
-                std::cout << "Некорректный выбор. Попробуйте снова.\n";
-                logger.log(Logger::WARNING, "Некорректный выбор в меню: " + std::to_string(choice));
             }
         }
-
     } catch (const std::exception& e) {
-        logger.log(Logger::ERROR, "Исключение: " + std::string(e.what()));
-        std::cerr << "Ошибка: " << e.what() << "\n";
+        std::cerr << "Произошла ошибка: " << e.what() << std::endl;
         return 1;
     }
 
-    logger.log(Logger::INFO, "Программа завершена");
-    std::cout << "Работа программы завершена.\n";
     return 0;
 }

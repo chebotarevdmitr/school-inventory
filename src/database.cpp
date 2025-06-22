@@ -6,26 +6,21 @@
 // Конструктор класса Database
 Database::Database(const std::string& db_path, Logger& logger)
     : db(nullptr), db_path(db_path), logger(logger) {
-    // Логируем попытку открытия базы данных
     logger.log(Logger::INFO, "Попытка открыть базу данных: " + db_path);
 
-    // Пытаемся открыть базу данных SQLite
     if (sqlite3_open(db_path.c_str(), &db) != SQLITE_OK) {
-        // Формируем сообщение об ошибке
         std::string err = "Не удалось открыть БД: " + std::string(sqlite3_errmsg(db));
-        // Логируем ошибку
         logger.log(Logger::ERROR, err);
-        throw std::runtime_error(err); // Генерируем исключение
+        throw std::runtime_error(err);
     }
 
-    // Успешное открытие базы данных
     logger.log(Logger::INFO, "База данных успешно открыта");
 }
 
 // Деструктор класса Database
 Database::~Database() {
     if (db) {
-        sqlite3_close(db); // Закрываем соединение с базой данных
+        sqlite3_close(db);
         logger.log(Logger::INFO, "Соединение с БД закрыто");
     }
 }
@@ -40,7 +35,7 @@ bool Database::execute(const std::string& sql) {
     if (result != SQLITE_OK) {
         std::string err = "Ошибка SQL: " + std::string(errMsg);
         logger.log(Logger::ERROR, err);
-        sqlite3_free(errMsg); // Освобождаем память
+        sqlite3_free(errMsg);
         return false;
     }
 
@@ -52,7 +47,6 @@ bool Database::execute(const std::string& sql) {
 bool Database::initialize() {
     logger.log(Logger::INFO, "Инициализация структуры БД");
 
-    // 1. Проверка и создание таблицы Equipment
     if (!tableExists("Equipment")) {
         logger.log(Logger::WARNING, "Таблица Equipment не найдена, создаем...");
 
@@ -73,7 +67,6 @@ bool Database::initialize() {
         }
     }
 
-    // 2. Проверка и создание таблицы Classrooms
     if (!tableExists("Classrooms")) {
         logger.log(Logger::WARNING, "Таблица Classrooms не найдена, создаем...");
 
@@ -190,6 +183,25 @@ bool Database::addEquipment(const std::string& name, int quantity,
     return execute(sql);
 }
 
+// Метод для обновления данных об оборудовании
+bool Database::updateEquipment(const std::string& inventory_number, int new_quantity,
+                               const std::string& new_room,
+                               const std::string& new_responsible) {
+    std::string sql = "UPDATE Equipment SET "
+                      "quantity = " + std::to_string(new_quantity) + ", "
+                      "room = '" + new_room + "', "
+                      "responsible = '" + new_responsible + "' "
+                      "WHERE inventory_number = '" + inventory_number + "';";
+
+    return execute(sql);
+}
+
+// Метод для удаления оборудования
+bool Database::removeEquipment(const std::string& inventory_number) {
+    std::string sql = "DELETE FROM Equipment WHERE inventory_number = '" + inventory_number + "';";
+    return execute(sql);
+}
+
 // Метод для поиска оборудования
 std::vector<std::vector<std::string>> Database::searchEquipment(const std::string& query) {
     std::vector<std::vector<std::string>> results;
@@ -219,35 +231,4 @@ std::vector<std::vector<std::string>> Database::searchEquipment(const std::strin
     sqlite3_finalize(stmt);
     logger.log(Logger::INFO, "Найдено записей оборудования: " + std::to_string(results.size()));
     return results;
-}
-
-/**
- * @brief Обновляет данные об оборудовании.
- * 
- * @param inventory_number Инвентарный номер оборудования.
- * @param new_quantity Новое количество единиц оборудования.
- * @param new_room Новый номер кабинета.
- * @param new_responsible Новое ФИО материально ответственного лица.
- * @return true, если данные обновлены успешно, иначе false.
- */
-bool Database::updateEquipment(const std::string& inventory_number, int new_quantity,
-                               const std::string& new_room,
-                               const std::string& new_responsible) {
-    logger.log(Logger::INFO, "Попытка обновить данные оборудования: " + inventory_number);
-
-    // Формируем SQL-запрос для обновления данных
-    std::string sql = "UPDATE Equipment SET "
-                      "quantity = " + std::to_string(new_quantity) + ", "
-                      "room = '" + new_room + "', "
-                      "responsible = '" + new_responsible + "' "
-                      "WHERE inventory_number = '" + inventory_number + "';";
-
-    // Выполняем запрос
-    if (!execute(sql)) {
-        logger.log(Logger::ERROR, "Ошибка обновления данных оборудования: " + inventory_number);
-        return false;
-    }
-
-    logger.log(Logger::INFO, "Данные оборудования успешно обновлены: " + inventory_number);
-    return true;
 }

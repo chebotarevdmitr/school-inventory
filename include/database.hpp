@@ -97,6 +97,14 @@ public:
                          const std::string& new_responsible);
 
     /**
+     * @brief Удаляет оборудование из базы данных.
+     * 
+     * @param inventory_number Инвентарный номер оборудования.
+     * @return true, если оборудование удалено успешно, иначе false.
+     */
+    bool removeEquipment(const std::string& inventory_number);
+
+    /**
      * @brief Ищет оборудование по заданному условию.
      * 
      * @param query Условие поиска (например, "room = '101'").

@@ -12,7 +12,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Путь к исходным файлам
 set(SOURCES
     src/main.cpp
-    src/Database.cpp
+    src/database.cpp
     src/Logger.cpp
     src/Equipment.cpp
 )
