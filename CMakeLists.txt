@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Путь к исходным файлам
+# Путь к исходным файлам основной программы
 set(SOURCES
     src/main.cpp
     src/database.cpp
@@ -24,7 +24,7 @@ set(HEADERS
     include/Equipment.hpp
 )
 
-# Добавление исполняемого файла
+# Добавление исполняемого файла основной программы
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 
 # Подключение директории с заголовочными файлами
@@ -34,7 +34,6 @@ target_include_directories(${PROJECT_NAME} PRIVATE include)
 find_package(SQLite3 REQUIRED)
 
 # Связывание библиотеки SQLite3 с проектом
-# Используем sqlite3 вместо SQLite3::SQLite3
 target_link_libraries(${PROJECT_NAME} PRIVATE sqlite3)
 
 # Настройка флагов компиляции (опционально)
@@ -47,3 +46,28 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 
 # Вывод информации о сборке
 message(STATUS "Project '${PROJECT_NAME}' configured successfully.")
+
+# *** Добавление Google Test ***
+# Ищем Google Test
+find_package(GTest REQUIRED)
+include_directories(${GTEST_INCLUDE_DIRS})
+
+# Путь к тестовым файлам
+set(TEST_SOURCES
+    tests/database_test.cpp
+)
+
+# Создаем исполняемый файл для тестов
+add_executable(run_tests ${TEST_SOURCES})
+
+# Подключаем заголовочные файлы для тестов
+target_include_directories(run_tests PRIVATE include)
+
+# Связываем Google Test и SQLite3 с тестами
+target_link_libraries(run_tests PRIVATE GTest::GTest GTest::Main sqlite3)
+
+# Добавляем тесты
+add_test(NAME runTests COMMAND run_tests)
+
+# Вывод информации о настройке тестов
+message(STATUS "Google Test configured successfully.")
