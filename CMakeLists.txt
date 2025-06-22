@@ -34,14 +34,8 @@ target_include_directories(${PROJECT_NAME} PRIVATE include)
 find_package(SQLite3 REQUIRED)
 
 # Связывание библиотеки SQLite3 с проектом
-target_link_libraries(${PROJECT_NAME} PRIVATE SQLite3::SQLite3)
-
-# Включение каталога для поиска заголовочных файлов SQLite3
-if(SQLite3_FOUND)
-    message(STATUS "SQLite3 library found: ${SQLite3_LIBRARIES}")
-else()
-    message(FATAL_ERROR "SQLite3 library not found!")
-endif()
+# Используем sqlite3 вместо SQLite3::SQLite3
+target_link_libraries(${PROJECT_NAME} PRIVATE sqlite3)
 
 # Настройка флагов компиляции (опционально)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
