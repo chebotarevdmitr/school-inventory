@@ -11,17 +11,17 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Путь к исходным файлам основной программы
 set(SOURCES
-    src/main.cpp
-    src/database.cpp
-    src/Logger.cpp
-    src/Equipment.cpp
+    src/main.cpp          # Главный файл программы
+    src/database.cpp      # Реализация класса Database
+    src/Logger.cpp        # Реализация класса Logger
+    src/Equipment.cpp     # Реализация класса Equipment
 )
 
 # Путь к заголовочным файлам
 set(HEADERS
-    include/database.hpp
-    include/Logger.hpp
-    include/Equipment.hpp
+    include/database.hpp  # Заголовочный файл для Database
+    include/Logger.hpp    # Заголовочный файл для Logger
+    include/Equipment.hpp # Заголовочный файл для Equipment
 )
 
 # Добавление исполняемого файла основной программы
@@ -54,16 +54,16 @@ include_directories(${GTEST_INCLUDE_DIRS})
 
 # Путь к тестовым файлам
 set(TEST_SOURCES
-    tests/database_test.cpp
+    tests/database_test.cpp # Тесты для класса Database
 )
 
 # Создаем исполняемый файл для тестов
-add_executable(run_tests ${TEST_SOURCES})
+add_executable(run_tests ${TEST_SOURCES} src/database.cpp src/Logger.cpp src/Equipment.cpp)
 
 # Подключаем заголовочные файлы для тестов
 target_include_directories(run_tests PRIVATE include)
 
-# Связываем Google Test и SQLite3 с тестами
+# Связываем Google Test, SQLite3 и объектные файлы с тестами
 target_link_libraries(run_tests PRIVATE GTest::GTest GTest::Main sqlite3)
 
 # Добавляем тесты
